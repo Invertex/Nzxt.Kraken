@@ -57,7 +57,7 @@ namespace Nzxt.Kraken.Controller
                     do
                     {
                         manager.Read(true);
-                        Console.WriteLine("Device = {0}, Fan Speed = {1}, Pump Speed = {2}", manager.Id, manager.FanSpeed, manager.PumpSpeed);
+                        Console.WriteLine("Device = {0}, Temperature = {1}C, Fan Speed = {2}, Pump Speed = {3}", manager.Id, manager.Temperature, manager.FanSpeed, manager.PumpSpeed);
                         if (Console.KeyAvailable)
                         {
                             break;

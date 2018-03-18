@@ -25,19 +25,19 @@ namespace Nzxt.Kraken.Core
         {
             this.ReadHandle = HidPlatform.CreateFile(
                 devicePath,
-                HidPlatform.FILE_ACCESS_MASK.GENERIC_READ,
-                HidPlatform.FILE_SHARE_MODE.FILE_SHARE_READ | HidPlatform.FILE_SHARE_MODE.FILE_SHARE_WRITE,
+                HidPlatform.FILE_ACCESS_READ,
+                HidPlatform.FILE_SHARE_READ | HidPlatform.FILE_SHARE_WRITE,
                 0,
-                HidPlatform.FILE_CREATION_DISPOSITON.OPEN_EXISTING,
+                HidPlatform.FILE_CREATION_DISPOSITON_OPEN_EXISTING,
                 0,
                 0
             );
             this.WriteHandle = HidPlatform.CreateFile(
                 devicePath,
-                HidPlatform.FILE_ACCESS_MASK.GENERIC_WRITE,
-                HidPlatform.FILE_SHARE_MODE.FILE_SHARE_READ | HidPlatform.FILE_SHARE_MODE.FILE_SHARE_WRITE,
+                HidPlatform.FILE_ACCESS_WRITE,
+                HidPlatform.FILE_SHARE_READ | HidPlatform.FILE_SHARE_WRITE,
                 0,
-                HidPlatform.FILE_CREATION_DISPOSITON.OPEN_EXISTING,
+                HidPlatform.FILE_CREATION_DISPOSITON_OPEN_EXISTING,
                 0,
                 0
             );

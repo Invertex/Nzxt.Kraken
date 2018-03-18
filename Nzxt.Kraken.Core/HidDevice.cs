@@ -7,6 +7,8 @@ namespace Nzxt.Kraken.Core
 {
     public class HidDevice
     {
+        public static uint MAX_DEVICES = 64;
+
         static HidDevice()
         {
             HidPlatform.HidD_GetHidGuid(out HID);
@@ -37,41 +39,81 @@ namespace Nzxt.Kraken.Core
         {
             get
             {
-                var devices = HidPlatform.SetupDiGetClassDevs(
-                    ref HID,
-                    0,
-                    IntPtr.Zero,
-                    HidPlatform.DIGCF.DIGCF_PRESENT | HidPlatform.DIGCF.DIGCF_DEVICEINTERFACE
-                );
+                var devices = SetupDiGetClassDevs();
                 var deviceInterface = new HidPlatform.SP_DEVICE_INTERFACE_DATA();
-                deviceInterface.cbSize = Marshal.SizeOf(deviceInterface);
-                for (uint index = 0; index < 64; index++)
+                deviceInterface.Size = Marshal.SizeOf(deviceInterface);
+                for (var a = 0u; a < MAX_DEVICES; a++)
                 {
-                    if (!HidPlatform.SetupDiEnumDeviceInterfaces(devices, IntPtr.Zero, ref HID, index, ref deviceInterface))
+                    if (!HidPlatform.SetupDiEnumDeviceInterfaces(devices, IntPtr.Zero, ref HID, a, ref deviceInterface))
                     {
                         continue;
                     }
-                    uint size = 0;
-                    HidPlatform.SetupDiGetDeviceInterfaceDetail(
-                        devices,
-                        ref deviceInterface,
-                        IntPtr.Zero,
-                        0,
-                        out size,
-                        IntPtr.Zero
-                    );
-                    var data = Marshal.AllocHGlobal((int)size);
-                    var deviceDetail = new HidPlatform.SP_DEVICE_INTERFACE_DETAIL_DATA();
-                    deviceDetail.cbSize = Marshal.SizeOf(deviceDetail);
-                    Marshal.StructureToPtr(deviceDetail, data, false);
-                    if (HidPlatform.SetupDiGetDeviceInterfaceDetail(devices, ref deviceInterface, data, size, out size, IntPtr.Zero))
+                    uint size = SetupDiGetDeviceInterfaceDetail(devices, ref deviceInterface);
+                    var devicePath = default(string);
+                    if (GetDevicePath(devices, deviceInterface, size, out devicePath))
                     {
-                        var devicePath = Marshal.PtrToStringAuto(data + 4);
                         yield return devicePath;
                     }
-                    Marshal.FreeHGlobal(data);
                 }
             }
+        }
+
+        private static uint SetupDiGetDeviceInterfaceDetail(IntPtr devices, ref HidPlatform.SP_DEVICE_INTERFACE_DATA deviceInterface)
+        {
+            var size = default(uint);
+            HidPlatform.SetupDiGetDeviceInterfaceDetail(
+                devices,
+                ref deviceInterface,
+                IntPtr.Zero,
+                0,
+                out size,
+                IntPtr.Zero
+            );
+            return size;
+        }
+
+        private static bool SetupDiGetDeviceInterfaceDetail(IntPtr devices, ref HidPlatform.SP_DEVICE_INTERFACE_DATA deviceInterface, uint size, IntPtr data)
+        {
+            return HidPlatform.SetupDiGetDeviceInterfaceDetail(
+                devices,
+                ref deviceInterface,
+                data,
+                size,
+                out size,
+                IntPtr.Zero
+            );
+        }
+
+        private static IntPtr SetupDiGetClassDevs()
+        {
+            return HidPlatform.SetupDiGetClassDevs(
+                ref HID,
+                0,
+                IntPtr.Zero,
+                HidPlatform.DIGCF_PRESENT | HidPlatform.DIGCF_DEVICEINTERFACE
+            );
+        }
+
+        private static bool GetDevicePath(IntPtr devices, HidPlatform.SP_DEVICE_INTERFACE_DATA deviceInterface, uint size, out string devicePath)
+        {
+            var data = Marshal.AllocHGlobal((int)size);
+            try
+            {
+                var deviceDetail = new HidPlatform.SP_DEVICE_INTERFACE_DETAIL_DATA();
+                deviceDetail.Size = Marshal.SizeOf(deviceDetail);
+                Marshal.StructureToPtr(deviceDetail, data, false);
+                if (SetupDiGetDeviceInterfaceDetail(devices, ref deviceInterface, size, data))
+                {
+                    devicePath = Marshal.PtrToStringAuto(data + 4);
+                    return true;
+                }
+            }
+            finally
+            {
+                Marshal.FreeHGlobal(data);
+            }
+            devicePath = default(string);
+            return false;
         }
 
         public static IEnumerable<HidDevice> Devices
@@ -83,10 +125,10 @@ namespace Nzxt.Kraken.Core
                 {
                     var file = HidPlatform.CreateFile(
                         devicePath,
-                        HidPlatform.FILE_ACCESS_MASK.GENERIC_READ | HidPlatform.FILE_ACCESS_MASK.GENERIC_WRITE,
-                        HidPlatform.FILE_SHARE_MODE.FILE_SHARE_READ | HidPlatform.FILE_SHARE_MODE.FILE_SHARE_WRITE,
+                        HidPlatform.FILE_ACCESS_READ | HidPlatform.FILE_ACCESS_WRITE,
+                        HidPlatform.FILE_SHARE_READ | HidPlatform.FILE_SHARE_WRITE,
                         0,
-                        HidPlatform.FILE_CREATION_DISPOSITON.OPEN_EXISTING,
+                        HidPlatform.FILE_CREATION_DISPOSITON_OPEN_EXISTING,
                         0,
                         0
                     );
