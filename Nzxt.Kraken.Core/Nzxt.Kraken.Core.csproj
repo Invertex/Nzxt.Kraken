@@ -44,6 +44,7 @@
     <Compile Include="HidDevice.cs" />
     <Compile Include="HidDriver.cs" />
     <Compile Include="HidPlatform.cs" />
+    <Compile Include="Logger.cs" />
     <Compile Include="Manager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
